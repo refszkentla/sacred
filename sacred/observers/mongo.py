@@ -8,6 +8,8 @@ import time
 from tempfile import NamedTemporaryFile
 import warnings
 
+import bson
+import pkg_resources
 import sacred.optional as opt
 from sacred.commandline_options import cli_option
 from sacred.dependencies import get_digest
@@ -362,11 +364,8 @@ class MongoObserver(RunObserver):
         autoinc_key = self.run_entry.get("_id") is None
         while True:
             if autoinc_key:
-                c = self.runs.find({}, {"_id": 1})
-                c = c.sort("_id", pymongo.DESCENDING).limit(1)
-                self.run_entry["_id"] = (
-                    c.next()["_id"] + 1 if self.runs.count_documents({}, limit=1) else 1
-                )
+                self.run_entry["_id"] = bson.ObjectId()
+            self.run_entry.pop('_id')
             try:
                 self.runs.insert_one(self.run_entry)
                 return
